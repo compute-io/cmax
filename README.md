@@ -19,18 +19,35 @@ For use in the browser, use [browserify](https://github.com/substack/node-browse
 To use the module,
 
 ``` javascript
-var foo = require( 'compute-cmax' );
+var cmax = require( 'compute-cmax' );
 ```
 
-#### foo( arr )
+#### cmax( arr )
 
-What does this function do?
+Computes the cumulative maximum of a numeric `array`.
+
+``` javascript
+var data = [ 3, 2, 4, 3 ];
+
+cmax( data );
+// returns [ 3, 3, 4, 4 ]
+```
 
 
 ## Examples
 
 ``` javascript
-var foo = require( 'compute-cmax' );
+var cmax = require( 'compute-cmax' );
+
+// Simulate some data...
+var data = new Array( 100 );
+
+for ( var i = 0; i < data.length; i++ ) {
+	data[ i ] = Math.round( Math.random()*100 );
+}
+
+console.log( cmax( data ) );
+// returns [...]
 ```
 
 To run the example code from the top-level application directory,
@@ -38,6 +55,11 @@ To run the example code from the top-level application directory,
 ``` bash
 $ node ./examples/index.js
 ```
+
+
+## Notes
+
+The function returns an `array` with a length equal to the original input `array`.
 
 
 ## Tests
