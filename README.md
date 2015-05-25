@@ -21,7 +21,7 @@ For use in the browser, use [browserify](https://github.com/substack/node-browse
 var cmax = require( 'compute-cmax' );
 ```
 
-#### cmax( arr[, accessor] )
+#### cmax( arr[, options] )
 
 Computes the cumulative maximum of the values in the input `array`. For numeric `arrays`,
 
@@ -31,6 +31,26 @@ var data = [ 3, 2, 4, 3 ];
 cmax( data );
 // returns [ 3, 3, 4, 4 ]
 ```
+
+The function accepts two `options`:
+
+*  __copy__: `boolean` indicating whether to return a new `array` containing the cumulative maxima. Default: `true`.
+*  __accessor__: accessor `function` for accessing numerical values in object `arrays`.
+
+To mutate the input `array` (e.g. when input values can be discarded or when optimizing memory usage), set the `copy` option to `false`.
+
+``` javascript
+var data = [  3, 2, 4, 3 ];
+
+var values = cmax( data, 2, {
+	'copy': false
+});
+//returns [ 3, 3, 4, 4 ]
+
+console.log( data === values );
+//returns true
+```
+
 
 For non-numeric `arrays`, provide an accessor `function` for accessing `numeric` values.
 
@@ -46,13 +66,14 @@ function getValue( d ) {
 	return d.x;
 }
 
-var m = cmax( arr, getValue );
+var m = cmax( arr, {
+	'accessor': getValue
+});
 // returns [ 3, 3, 4, 4 ]
 ```
 
 
 __Note__: if provided an empty `array`, the function returns `null`.
-
 
 ## Examples
 
