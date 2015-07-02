@@ -6,6 +6,9 @@
 var // Expectation library:
 	chai = require( 'chai' ),
 
+	// Matrix data structure:
+	matrix = require( 'dstructs-matrix' ),
+
 	// Module to be tested:
 	cmax = require( './../lib' );
 
@@ -24,9 +27,9 @@ describe( 'compute-cmax', function tests() {
 		expect( cmax ).to.be.a( 'function' );
 	});
 
-	it( 'should throw an error if provided a non-array', function test() {
+	it( 'should throw an error if the first argument is neither array-like or matrix-like', function test() {
 		var values = [
-			'5',
+			// '5', // valid as is array-like (length)
 			5,
 			true,
 			undefined,
@@ -46,7 +49,7 @@ describe( 'compute-cmax', function tests() {
 		}
 	});
 
-	it( 'should throw an error if `options` is not an object', function test() {
+	it( 'should throw an error if provided a dimension which is greater than 2 when provided a matrix', function test() {
 		var values = [
 			'5',
 			5,
@@ -55,62 +58,18 @@ describe( 'compute-cmax', function tests() {
 			null,
 			NaN,
 			[],
+			{},
 			function(){}
 		];
 
 		for ( var i = 0; i < values.length; i++ ) {
-			expect( badValue( values[ i ] ) ).to.throw( TypeError );
+			expect( badValue( values[i] ) ).to.throw( Error );
 		}
-
 		function badValue( value ) {
 			return function() {
-				cmax( [1,2,3,4,5], value );
-			};
-		}
-	});
-
-	it( 'should throw an error if provided an accessor which is not a function', function test() {
-		var values = [
-			'5',
-			5,
-			true,
-			undefined,
-			null,
-			NaN,
-			[],
-			{}
-		];
-
-		for ( var i = 0; i < values.length; i++ ) {
-			expect( badValue( values[ i ] ) ).to.throw( TypeError );
-		}
-
-		function badValue( value ) {
-			return function() {
-				cmax( [1,2,3,4,5], {'accessor': value} );
-			};
-		}
-	});
-
-	it( 'should throw an error if provided a copy option which is not a boolean', function test() {
-		var values = [
-			'5',
-			5,
-			function(){},
-			undefined,
-			null,
-			NaN,
-			[],
-			{}
-		];
-
-		for ( var i = 0; i < values.length; i++ ) {
-			expect( badValue( values[ i ] ) ).to.throw( TypeError );
-		}
-
-		function badValue( value ) {
-			return function() {
-				cmax( [1,2,3,4,5], {'copy': value} );
+				cmax( matrix( [2,2] ), {
+					'dim': value
+				});
 			};
 		}
 	});
@@ -120,6 +79,18 @@ describe( 'compute-cmax', function tests() {
 
 		data = [ 2, 4, 5, 3, 8, 2 ];
 		expected = [ 2, 4, 5, 5, 8, 8 ];
+
+		results = cmax( data );
+
+		assert.strictEqual( results.length, expected.length );
+		assert.deepEqual( results, expected );
+	});
+
+	it( 'should compute the cumulative maximum for a typed array', function test() {
+		var data, expected, results;
+
+		data = new Int32Array( [ 2, 4, 5, 3, 8, 2 ] );
+		expected = new Int32Array( [ 2, 4, 5, 5, 8, 8 ] );
 
 		results = cmax( data );
 
@@ -139,11 +110,10 @@ describe( 'compute-cmax', function tests() {
 			{'x':2}
 		];
 
+		expected = [ 2, 4, 5, 5, 8, 8 ];
 		actual = cmax( data, {
 			'accessor': getValue
 		});
-		expected = [ 2, 4, 5, 5, 8, 8 ];
-
 		assert.deepEqual( actual, expected );
 
 		function getValue( d ) {
@@ -157,7 +127,24 @@ describe( 'compute-cmax', function tests() {
 		data = [ 2, 4, 5, 3, 8, 2 ];
 		expected = [ 2, 4, 5, 5, 8, 8 ];
 
-		results = cmax( data, {'copy': false} );
+		results = cmax( data, {
+			'copy': false
+		});
+
+		assert.strictEqual( results.length, expected.length );
+		assert.deepEqual( results, expected );
+		assert.ok( results === data );
+	});
+
+	it( 'should compute the cumulative maximum and mutate a typed input array', function test() {
+		var data, expected, results;
+
+		data = new Int32Array(  [ 2, 4, 5, 3, 8, 2 ] );
+		expected = new Int32Array( [ 2, 4, 5, 5, 8, 8 ] );
+
+		results = cmax( data, {
+			'copy': false
+		});
 
 		assert.strictEqual( results.length, expected.length );
 		assert.deepEqual( results, expected );
@@ -178,8 +165,8 @@ describe( 'compute-cmax', function tests() {
 
 		actual = cmax( data, {
 			'accessor': getValue,
-			'copy': false
-		});
+			'copy': false}
+		);
 		expected = [ 2, 4, 5, 5, 8, 8 ];
 		assert.ok( actual === data );
 
@@ -190,8 +177,49 @@ describe( 'compute-cmax', function tests() {
 		}
 	});
 
-	it( 'should return null if provided an empty array', function test() {
-		assert.isNull( cmax( [] ) );
+
+	it( 'should compute the cumulative maximum along matrix columns', function test() {
+		var d1, d2, data, actual, expected;
+
+		d1 = new Int16Array( [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ] );
+		d2 = new Int16Array( [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ] );
+		expected = matrix( d2, [3,3], 'int16' );
+		data = matrix( d1, [3,3], 'int16' );
+
+		actual = cmax( data );
+
+		assert.deepEqual( actual.data, expected.data );
+
+		// Mutate...
+		actual = cmax( data, {
+			'copy': false,
+			'dim': 2
+		});
+		assert.strictEqual( actual, data );
+		assert.deepEqual( actual.data, d2 );
+	});
+
+	it( 'should compute the cumulative maximum along matrix rows', function test() {
+		var d1, d2, data, actual, expected;
+
+		d1 = new Int16Array( [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ] );
+		d2 = new Int16Array( [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ] );
+		expected = matrix( d2, [3,3], 'int16' );
+		data = matrix( d1, [3,3], 'int16' );
+
+		actual = cmax( data, {
+			'dim': 1
+		});
+
+		assert.deepEqual( actual.data, expected.data );
+
+		// Mutate...
+		actual = cmax( data, {
+			'copy': false,
+			'dim': 1
+		});
+		assert.strictEqual( actual, data );
+		assert.deepEqual( actual.data, d2 );
 	});
 
 });
