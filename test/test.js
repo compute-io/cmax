@@ -57,4 +57,21 @@ describe( 'compute-cmax', function tests() {
 		assert.deepEqual( results, expected );
 	});
 
+	it('should distinguish -0 from 0', function test(){
+		var data, expected, actual;
+		data = [-0,0];
+		expected = Infinity;
+
+		actual = 1/cmax(data)[1];
+		assert.equal( actual, expected );
+	});
+
+	it('should distinguish 0 from -0', function test(){
+		var data, expected, actual;
+		data = [0,-0];
+		expected = Infinity;
+
+		actual = 1/cmax(data)[1];
+		assert.equal( actual, expected );
+	});
 });
